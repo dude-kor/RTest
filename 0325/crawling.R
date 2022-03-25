@@ -55,6 +55,30 @@ sButton <- remDr$findElements(using ="css selector","#search_frm > div > div > d
 # 검색 버튼 클릭
 sapply(sButton,function(x){x$clickElement()})
 
+# 검색 결과 수 추출
+colNum <- remDr$findElements(using ="css selector","#sub_con > div.tbl01_wrap > span")
+colNum_c <- sapply(colNum,function(x){x$getElementText()})
+
+# 검색 결과 문자 숫자만 추출
+colNum_d <- as.numeric(gsub('\\D',"",colNum_c))
+
+# 사업코드, 사업명, 사업등록 유형, 사업위치구분, 사업위치, 사업구분, 사업규모
+bCode = data.frame(matrix(ncol = colNum_d))
+bName = data.frame(matrix(ncol = colNum_d))
+bType = data.frame(matrix(ncol = colNum_d))
+bLoc = data.frame(matrix(ncol = colNum_d))
+bDiv = data.frame(matrix(ncol = colNum_d))
+bScale = data.frame(matrix(ncol = colNum_d))
+
+# switchToWindow() 함수 오류로 인해 자체 동일 기능 함수 선언
+# 중복 선언 회피를 위한 선언 선행
+myswitch <- function (remDr, windowId) 
+{
+  qpath <- sprintf("%s/session/%s/window", remDr$serverURL, 
+                   remDr$sessionInfo[["id"]])
+  remDr$queryRD(qpath, "POST", qdata = list(handle = windowId))
+}
+
 # 사업명
 title <- remDr$findElements(using ="css selector","#sub_con > div.tbl01_wrap > table > tbody > tr:nth-child(1) > td.title")
 
@@ -63,26 +87,51 @@ sapply(title,function(x){x$clickElement()})
 
 # 팝업으로 인한 화면 전환
 # 열려 있는 윈도우 리스트로 추출
-#remDr$getWindowHandles()
-#remDr$getCurrentWindowHandle()
 windowList <- remDr$getWindowHandles()
 
 # 전환할 윈도우 문자열로 추출
 sBuf <- unlist(windowList[2])
 
-# switchToWindow() 함수 오류로 자체 동일 기능 함수 선언
-myswitch <- function (remDr, windowId) 
-{
-  qpath <- sprintf("%s/session/%s/window", remDr$serverURL, 
-                   remDr$sessionInfo[["id"]])
-  remDr$queryRD(qpath, "POST", qdata = list(handle = windowId))
-}
-
 # 작업할 윈도우로 전환
 myswitch(remDr, sBuf)
 
-test <- remDr$findElements(using ="css selector","#sub_con > div.conbody > ul:nth-child(3) > li:nth-child(2) > a")
-#sapply(test,function(x){x$clickElement()})
+# 해당 윈도우 정보 for문으로 반복
+# 1. 전체 정보 크롤링 하는 방법
+# for(i in 1:10){
+#   cssSelector <- paste0("#sub_con > div.conbody > div > table > tbody > tr:nth-child(",i,") > td:nth-child(2)")
+#   header <- remDr$findElements(using ="css selector",cssSelector)
+#   header_c <- sapply(header,function(x){x$getElementText()})
+#   result = header_c
+#   print(result)
+# }
+# 
+# for(i in 1:8){
+#   cssSelector <- paste0("#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(",i,") > td:nth-child(2)")
+#   header <- remDr$findElements(using ="css selector",cssSelector)
+#   header_c <- sapply(header,function(x){x$getElementText()})
+#   result = header_c
+#   print(result)
+# }
+# 
+
+# 2. 해당 정보만 크롤링 하는 방법
+# bList1 <- c(1,2,3)
+# for(i in 1:length(bList1)){
+#     cssSelector <- paste0("#sub_con > div.conbody > div > table > tbody > tr:nth-child(",bList1[i],") > td:nth-child(2)")
+#     header <- remDr$findElements(using ="css selector",cssSelector)
+#     header_c <- sapply(header,function(x){x$getElementText()})
+#     result = header_c
+#     print(result)
+# }
+# bList2 <- c(1,2,3,6)
+# for(i in 1:length(bList2)){
+#   cssSelector <- paste0("#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(",bList2[i],") > td:nth-child(2)")
+#   header <- remDr$findElements(using ="css selector",cssSelector)
+#   header_c <- sapply(header,function(x){x$getElementText()})
+#   result = header_c
+#   print(result)
+# }
+
 
 # 현재 작업 중인 창 닫기
 #remDr$closeWindow()
