@@ -2,14 +2,14 @@
 rm(list=ls())
 
 # 해당 디렉토리 설정
-wd <- "E:/workspace/2022_01/R"
-setwd("E:/workspace/2022_01/R")
-getwd()
+# 컴퓨터 디렉토리 : "E:/workspace/2022_01/R"
+# 노트북 디렉토리 : "C:/Users/user/RProjects/RTest"
+setwd(unlist(getwd()[1]))
 
 # 해당 라이브러리 설정
-libPath <- "E:/workspace/2021_01/R-4.1.0/library"
-.libPaths(libPath)
-.libPaths()
+# 컴퓨터 디렉토리 : "E:/workspace/2021_01/R-4.1.0/library"
+# 노트북 디렉토리 : "C:/Users/user/Documents/R/win-library/4.1"
+.libPaths(unlist(.libPaths()[1]))
 
 # RSelenium 실행
 library("RSelenium")
@@ -63,12 +63,12 @@ colNum_c <- sapply(colNum,function(x){x$getElementText()})
 colNum_d <- as.numeric(gsub('\\D',"",colNum_c))
 
 # 사업코드, 사업명, 사업등록 유형, 사업위치구분, 사업위치, 사업구분, 사업규모
-bCode = data.frame(matrix(ncol = colNum_d))
-bName = data.frame(matrix(ncol = colNum_d))
-bType = data.frame(matrix(ncol = colNum_d))
-bLoc = data.frame(matrix(ncol = colNum_d))
-bDiv = data.frame(matrix(ncol = colNum_d))
-bScale = data.frame(matrix(ncol = colNum_d))
+bCode = data.frame(matrix(nrow=colNum_d))
+bName = data.frame(matrix(ncol=colNum_d))
+bType = data.frame(matrix(ncol=colNum_d))
+bLoc = data.frame(matrix(ncol=colNum_d))
+bDiv = data.frame(matrix(ncol=colNum_d))
+bScale = data.frame(matrix(ncol=colNum_d))
 
 # switchToWindow() 함수 오류로 인해 자체 동일 기능 함수 선언
 # 중복 선언 회피를 위한 선언 선행
@@ -132,6 +132,11 @@ myswitch(remDr, sBuf)
 #   print(result)
 # }
 
+# 3. 일부만 크롤링하여 분류하는 방법
+code <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(1) > td:nth-child(2)")
+bCode = data.frame(matrix(ncol=colNum_d))
+bCode[2][1] <- toString(unlist(sapply(code,function(x){x$getElementText()})))
+print(bCode)
 
 # 현재 작업 중인 창 닫기
 #remDr$closeWindow()
