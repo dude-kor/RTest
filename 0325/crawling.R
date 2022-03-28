@@ -271,7 +271,7 @@ for(page in 1:page_total){
 }
 
 # 모든 창 닫기
-#remDr$closeall()
+remDr$closeall()
 
 # data.frame 열 변환 후 하나로 묶기
 csv <- data.frame(t(bCode), t(bName), t(bType), t(bProp), t(bLoc), t(bArea))
