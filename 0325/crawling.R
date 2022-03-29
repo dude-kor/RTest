@@ -119,13 +119,18 @@ parentWindow <- remDr$getCurrentWindowHandle()
 parentWindow_u <- unlist(parentWindow)
 
 for(page in 1:page_total){
+  # '처음으로','이전 페이지' 다음 버튼을 위해 +2
+  page_css <- paste0("#paging > li:nth-child(",page+2,") > a")
+  print(page_css)
   # 페이지 버튼
-  page_button <- remDr$findElements(using ="css selector","#paging > li.on > a")
+  page_button <- remDr$findElements(using ="css selector",page_css)
   
   # 버튼 클릭
   sapply(page_button,function(x){x$clickElement()})
   
   for(i in 1:10){
+    if(index > colNum_d)
+      break
     # 사업명
     cssSelector <- paste0("#sub_con > div.tbl01_wrap > table > tbody > tr:nth-child(",i,") > td.title")
     title <- remDr$findElements(using ="css selector",cssSelector)
@@ -184,8 +189,12 @@ for(page in 1:page_total){
     # }
     
     # 3. 일부만 크롤링하여 분류하는 방법
+    # 화면 전환 딜레이로 첫번째 인덱스를 읽게 해주기 위해
+    Sys.sleep(0.5)
+    
     # 1) 사업코드 
     # CSS 추출
+    #sub_con > div.conbody > div > table > tbody > tr:nth-child(1) > td:nth-child(2)
     code <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(1) > td:nth-child(2)")
     
     # 텍스트 추출
@@ -196,7 +205,7 @@ for(page in 1:page_total){
     
     # data.frame에 삽입
     bCode[index] <- code_u
-    
+
     # 2) 사업명 
     # CSS 추출
     name <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(2) > td:nth-child(2)")
@@ -245,11 +254,21 @@ for(page in 1:page_total){
     
     # 변수 unlist로 문자열 형식 변환
     loc_u <- unlist(loc_t)
+    loc_ut <- ""
     
     # 한 개 이상의 소재지가 잡힐 경우 대표 소재지 선택
     # data.frame에 삽입
-    bLoc[index] <- loc_u[1]
-    
+    #bLoc[index] <- loc_u[1]
+    for(t in 1:length(loc_u)){
+      if(t == length(loc_u)){
+        loc_ut <- paste0(loc_ut,loc_u[t])
+      }else{
+        loc_ut <- paste0(loc_ut,loc_u[t],"\n")
+      }
+    }
+    loc_u <- loc_ut
+
+    bLoc[index] <- loc_u
     # 6) 사업규모
     # CSS 추출
     area <- remDr$findElements(using ="css selector","#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(6) > td:nth-child(2)")
@@ -275,6 +294,9 @@ remDr$closeall()
 
 # data.frame 열 변환 후 하나로 묶기
 csv <- data.frame(t(bCode), t(bName), t(bType), t(bProp), t(bLoc), t(bArea))
+
+# csv 열별 이름 바꾸기
+names(csv) = c("사업코드", "사업명", "사업등록유형", "사업구분", "사업위치", "사업규모")
 
 # csv로 내보내기
 write.csv(csv, file="소규모환경영향평가.csv")
