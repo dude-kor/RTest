@@ -92,6 +92,9 @@ colNum_d <- as.numeric(gsub('\\D',"",colNum_c))
 # 올림으로 총 페이지 수 변수 선언
 page_total <- ceiling(colNum_d/10)
 
+# 페이지 수가 10개 이상 처리를 위한 변수 선언
+page_ten <- ceiling(page_total/10)
+
 # 사업코드, 사업명, 사업등록 유형, 사업구분, 사업위치, 사업규모
 bCode = data.frame(matrix(ncol=colNum_d))
 bName = data.frame(matrix(ncol=colNum_d))
@@ -118,175 +121,186 @@ parentWindow <- remDr$getCurrentWindowHandle()
 # 변수 unlist로 문자열 형식 변환
 parentWindow_u <- unlist(parentWindow)
 
-for(page in 1:page_total){
-  # '처음으로','이전 페이지' 다음 버튼을 위해 +2
-  page_css <- paste0("#paging > li:nth-child(",page+2,") > a")
-  print(page_css)
+for(page in 1:page_ten){
+  for(page in 1:10){
+    # '처음으로','이전 페이지' 다음 버튼을 위해 +2
+    page_css <- paste0("#paging > li:nth-child(",page+2,") > a")
+    
+    # 페이지 버튼
+    page_button <- remDr$findElements(using ="css selector",page_css)
+    
+    # 버튼 클릭
+    sapply(page_button,function(x){x$clickElement()})
+    
+    for(i in 1:10){
+      if(index > colNum_d)
+        break
+      # 사업명
+      cssSelector <- paste0("#sub_con > div.tbl01_wrap > table > tbody > tr:nth-child(",i,") > td.title")
+      title <- remDr$findElements(using ="css selector",cssSelector)
+      
+      # 사업명 클릭
+      sapply(title,function(x){x$clickElement()})
+      
+      # 팝업으로 인한 화면 전환
+      # 열려 있는 윈도우 리스트로 추출
+      windowList <- remDr$getWindowHandles()
+      
+      # 자식창 변수 선언
+      childWindow <- windowList[2]
+      
+      # 변수 unlist로 문자열 형식 변환
+      childWindow_u <- unlist(childWindow)
+      
+      # 작업할 윈도우로 전환
+      myswitch(remDr, childWindow_u)
+      
+      # 해당 윈도우 정보 for문으로 반복
+      # 1. 전체 정보 크롤링 하는 방법
+      # for(i in 1:10){
+      #   cssSelector <- paste0("#sub_con > div.conbody > div > table > tbody > tr:nth-child(",i,") > td:nth-child(2)")
+      #   header <- remDr$findElements(using ="css selector",cssSelector)
+      #   header_c <- sapply(header,function(x){x$getElementText()})
+      #   result = header_c
+      #   print(result)
+      # }
+      # 
+      # for(i in 1:8){
+      #   cssSelector <- paste0("#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(",i,") > td:nth-child(2)")
+      #   header <- remDr$findElements(using ="css selector",cssSelector)
+      #   header_c <- sapply(header,function(x){x$getElementText()})
+      #   result = header_c
+      #   print(result)
+      # }
+      # 
+      
+      # 2. 해당 정보만 크롤링 하는 방법
+      # bList1 <- c(1,2,3)
+      # for(i in 1:length(bList1)){
+      #     cssSelector <- paste0("#sub_con > div.conbody > div > table > tbody > tr:nth-child(",bList1[i],") > td:nth-child(2)")
+      #     header <- remDr$findElements(using ="css selector",cssSelector)
+      #     header_c <- sapply(header,function(x){x$getElementText()})
+      #     result = header_c
+      #     print(result)
+      # }
+      # bList2 <- c(1,2,3,6)
+      # for(i in 1:length(bList2)){
+      #   cssSelector <- paste0("#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(",bList2[i],") > td:nth-child(2)")
+      #   header <- remDr$findElements(using ="css selector",cssSelector)
+      #   header_c <- sapply(header,function(x){x$getElementText()})
+      #   result = header_c
+      #   print(result)
+      # }
+      
+      # 3. 일부만 크롤링하여 분류하는 방법
+      # 화면 전환 딜레이로 첫번째 인덱스를 읽게 해주기 위해
+      Sys.sleep(0.5)
+      
+      # 1) 사업코드 
+      # CSS 추출
+      #sub_con > div.conbody > div > table > tbody > tr:nth-child(1) > td:nth-child(2)
+      code <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(1) > td:nth-child(2)")
+      
+      # 텍스트 추출
+      code_t <- sapply(code,function(x){x$getElementText()})
+      
+      # 변수 unlist로 문자열 형식 변환
+      code_u <- unlist(code_t)
+      
+      # data.frame에 삽입
+      bCode[index] <- code_u
+      
+      # 2) 사업명 
+      # CSS 추출
+      name <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(2) > td:nth-child(2)")
+      
+      # 텍스트 추출
+      name_t <- sapply(name,function(x){x$getElementText()})
+      
+      # 변수 unlist로 문자열 형식 변환
+      name_u <- unlist(name_t)
+      
+      # data.frame에 삽입
+      bName[index] <- name_u
+      
+      # 3) 사업등록 유형 
+      # CSS 추출
+      type <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(3) > td:nth-child(2)")
+      
+      # 텍스트 추출
+      type_t <- sapply(type,function(x){x$getElementText()})
+      
+      # 변수 unlist로 문자열 형식 변환
+      type_u <- unlist(type_t)
+      
+      # data.frame에 삽입
+      bType[index] <- type_u
+      
+      # 4) 사업 구분
+      # CSS 추출
+      prop <- remDr$findElements(using ="css selector","#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(1) > td:nth-child(2)")
+      
+      # 텍스트 추출
+      prop_t <- sapply(prop,function(x){x$getElementText()})
+      
+      # 변수 unlist로 문자열 형식 변환
+      prop_u <- unlist(prop_t)
+      
+      # data.frame에 삽입
+      bProp[index] <- prop_u
+      
+      # 5) 사업 위치
+      # CSS 추출
+      loc <- remDr$findElements(using = "css selector","#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr > td:nth-child(1)")
+      
+      # 텍스트 추출
+      loc_t <- sapply(loc,function(x){x$getElementText()})
+      
+      # 변수 unlist로 문자열 형식 변환
+      loc_u <- unlist(loc_t)
+      loc_ut <- ""
+      
+      # 한 개 이상의 소재지가 잡힐 경우 대표 소재지 선택
+      # data.frame에 삽입
+      #bLoc[index] <- loc_u[1]
+      for(t in 1:length(loc_u)){
+        if(t == length(loc_u)){
+          loc_ut <- paste0(loc_ut,loc_u[t])
+        }else{
+          loc_ut <- paste0(loc_ut,loc_u[t],"\n")
+        }
+      }
+      loc_u <- loc_ut
+      
+      bLoc[index] <- loc_u
+      # 6) 사업규모
+      # CSS 추출
+      area <- remDr$findElements(using ="css selector","#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(6) > td:nth-child(2)")
+      
+      # 텍스트 추출
+      area_t <- sapply(area,function(x){x$getElementText()})
+      
+      # 변수 unlist로 문자열 형식 변환
+      area_u <- unlist(area_t)
+      
+      # data.frame에 삽입
+      bArea[index] <- area_u
+      
+      # 부모창 윈도우로 전환
+      myswitch(remDr, parentWindow_u)
+      
+      index <- (index + 1)
+    }
+  }
+  
+  # 다음 페이지 버튼
+  next_css <- remDr$findElements(using ="css selector","#paging > li:nth-child(13) > a")
+  
   # 페이지 버튼
-  page_button <- remDr$findElements(using ="css selector",page_css)
+  next_button <- remDr$findElements(using ="css selector",next_css)
   
   # 버튼 클릭
-  sapply(page_button,function(x){x$clickElement()})
-  
-  for(i in 1:10){
-    if(index > colNum_d)
-      break
-    # 사업명
-    cssSelector <- paste0("#sub_con > div.tbl01_wrap > table > tbody > tr:nth-child(",i,") > td.title")
-    title <- remDr$findElements(using ="css selector",cssSelector)
-    
-    # 사업명 클릭
-    sapply(title,function(x){x$clickElement()})
-    
-    # 팝업으로 인한 화면 전환
-    # 열려 있는 윈도우 리스트로 추출
-    windowList <- remDr$getWindowHandles()
-    
-    # 자식창 변수 선언
-    childWindow <- windowList[2]
-    
-    # 변수 unlist로 문자열 형식 변환
-    childWindow_u <- unlist(childWindow)
-    
-    # 작업할 윈도우로 전환
-    myswitch(remDr, childWindow_u)
-    
-    # 해당 윈도우 정보 for문으로 반복
-    # 1. 전체 정보 크롤링 하는 방법
-    # for(i in 1:10){
-    #   cssSelector <- paste0("#sub_con > div.conbody > div > table > tbody > tr:nth-child(",i,") > td:nth-child(2)")
-    #   header <- remDr$findElements(using ="css selector",cssSelector)
-    #   header_c <- sapply(header,function(x){x$getElementText()})
-    #   result = header_c
-    #   print(result)
-    # }
-    # 
-    # for(i in 1:8){
-    #   cssSelector <- paste0("#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(",i,") > td:nth-child(2)")
-    #   header <- remDr$findElements(using ="css selector",cssSelector)
-    #   header_c <- sapply(header,function(x){x$getElementText()})
-    #   result = header_c
-    #   print(result)
-    # }
-    # 
-    
-    # 2. 해당 정보만 크롤링 하는 방법
-    # bList1 <- c(1,2,3)
-    # for(i in 1:length(bList1)){
-    #     cssSelector <- paste0("#sub_con > div.conbody > div > table > tbody > tr:nth-child(",bList1[i],") > td:nth-child(2)")
-    #     header <- remDr$findElements(using ="css selector",cssSelector)
-    #     header_c <- sapply(header,function(x){x$getElementText()})
-    #     result = header_c
-    #     print(result)
-    # }
-    # bList2 <- c(1,2,3,6)
-    # for(i in 1:length(bList2)){
-    #   cssSelector <- paste0("#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(",bList2[i],") > td:nth-child(2)")
-    #   header <- remDr$findElements(using ="css selector",cssSelector)
-    #   header_c <- sapply(header,function(x){x$getElementText()})
-    #   result = header_c
-    #   print(result)
-    # }
-    
-    # 3. 일부만 크롤링하여 분류하는 방법
-    # 화면 전환 딜레이로 첫번째 인덱스를 읽게 해주기 위해
-    Sys.sleep(0.5)
-    
-    # 1) 사업코드 
-    # CSS 추출
-    #sub_con > div.conbody > div > table > tbody > tr:nth-child(1) > td:nth-child(2)
-    code <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(1) > td:nth-child(2)")
-    
-    # 텍스트 추출
-    code_t <- sapply(code,function(x){x$getElementText()})
-    
-    # 변수 unlist로 문자열 형식 변환
-    code_u <- unlist(code_t)
-    
-    # data.frame에 삽입
-    bCode[index] <- code_u
-
-    # 2) 사업명 
-    # CSS 추출
-    name <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(2) > td:nth-child(2)")
-    
-    # 텍스트 추출
-    name_t <- sapply(name,function(x){x$getElementText()})
-    
-    # 변수 unlist로 문자열 형식 변환
-    name_u <- unlist(name_t)
-    
-    # data.frame에 삽입
-    bName[index] <- name_u
-    
-    # 3) 사업등록 유형 
-    # CSS 추출
-    type <- remDr$findElements(using ="css selector","#sub_con > div.conbody > div > table > tbody > tr:nth-child(3) > td:nth-child(2)")
-    
-    # 텍스트 추출
-    type_t <- sapply(type,function(x){x$getElementText()})
-    
-    # 변수 unlist로 문자열 형식 변환
-    type_u <- unlist(type_t)
-    
-    # data.frame에 삽입
-    bType[index] <- type_u
-    
-    # 4) 사업 구분
-    # CSS 추출
-    prop <- remDr$findElements(using ="css selector","#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(1) > td:nth-child(2)")
-    
-    # 텍스트 추출
-    prop_t <- sapply(prop,function(x){x$getElementText()})
-    
-    # 변수 unlist로 문자열 형식 변환
-    prop_u <- unlist(prop_t)
-    
-    # data.frame에 삽입
-    bProp[index] <- prop_u
-    
-    # 5) 사업 위치
-    # CSS 추출
-    loc <- remDr$findElements(using = "css selector","#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr > td:nth-child(1)")
-    
-    # 텍스트 추출
-    loc_t <- sapply(loc,function(x){x$getElementText()})
-    
-    # 변수 unlist로 문자열 형식 변환
-    loc_u <- unlist(loc_t)
-    loc_ut <- ""
-    
-    # 한 개 이상의 소재지가 잡힐 경우 대표 소재지 선택
-    # data.frame에 삽입
-    #bLoc[index] <- loc_u[1]
-    for(t in 1:length(loc_u)){
-      if(t == length(loc_u)){
-        loc_ut <- paste0(loc_ut,loc_u[t])
-      }else{
-        loc_ut <- paste0(loc_ut,loc_u[t],"\n")
-      }
-    }
-    loc_u <- loc_ut
-
-    bLoc[index] <- loc_u
-    # 6) 사업규모
-    # CSS 추출
-    area <- remDr$findElements(using ="css selector","#sub_con > div.conbody > ul.tab_cont > li.on > table > tbody > tr:nth-child(6) > td:nth-child(2)")
-    
-    # 텍스트 추출
-    area_t <- sapply(area,function(x){x$getElementText()})
-    
-    # 변수 unlist로 문자열 형식 변환
-    area_u <- unlist(area_t)
-    
-    # data.frame에 삽입
-    bArea[index] <- area_u
-    
-    # 부모창 윈도우로 전환
-    myswitch(remDr, parentWindow_u)
-    
-    index <- (index + 1)
-  }
+  sapply(next_button,function(x){x$clickElement()})
 }
 
 # 모든 창 닫기
